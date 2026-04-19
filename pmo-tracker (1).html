@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PMO Tracker">
+<title>PMO Tracker</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #181c24;
+    --bg3: #1f2330;
+    --text: #e8eaf2;
+    --text2: #8b90a4;
+    --text3: #555b6e;
+    --border: rgba(255,255,255,0.08);
+    --green-bg: #0d2310;
+    --green: #4ade80;
+    --green-dim: #166534;
+    --red-bg: #2a0a0a;
+    --red: #f87171;
+    --red-dim: #991b1b;
+    --amber: #fbbf24;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  .app { max-width: 430px; margin: 0 auto; padding: 0 0 40px; min-height: 100vh; }
+
+  /* Header */
+  .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 56px 20px 16px; }
+  .top-title { font-size: 13px; font-weight: 600; letter-spacing: 0.14em; color: var(--text2); text-transform: uppercase; }
+  .top-date { font-size: 12px; color: var(--text3); }
+
+  /* Hero streak */
+  .hero { text-align: center; padding: 8px 20px 28px; }
+  .hero-num { font-size: 72px; font-weight: 700; line-height: 1; color: var(--text); letter-spacing: -2px; }
+  .hero-num.zero { color: var(--text3); }
+  .hero-label { font-size: 12px; color: var(--text2); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 6px; }
+  .hero-fire { font-size: 28px; margin-bottom: 4px; filter: grayscale(0); }
+  .hero-fire.zero { filter: grayscale(1); opacity: 0.3; }
+
+  /* Stats row */
+  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; padding: 0 16px 20px; }
+  .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 8px; text-align: center; }
+  .stat-val { font-size: 22px; font-weight: 600; line-height: 1; }
+  .stat-val.g { color: var(--green); }
+  .stat-val.a { color: var(--amber); }
+  .stat-val.r { color: var(--red); }
+  .stat-lbl { font-size: 10px; color: var(--text3); margin-top: 5px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* Today card */
+  .today-card { margin: 0 16px 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .today-title { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .today-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn-ok { padding: 14px; background: var(--green-bg); border: 1px solid var(--green-dim); border-radius: var(--radius-sm); color: var(--green); font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s, transform 0.1s; letter-spacing: 0.02em; }
+  .btn-ok.active { background: rgba(74,222,128,0.2); border-color: var(--green); }
+  .btn-ok:active { transform: scale(0.97); }
+  .btn-no { padding: 14px; background: var(--red-bg); border: 1px solid var(--red-dim); border-radius: var(--radius-sm); color: var(--red); font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s, transform 0.1s; letter-spacing: 0.02em; }
+  .btn-no.active { background: rgba(248,113,113,0.2); border-color: var(--red); }
+  .btn-no:active { transform: scale(0.97); }
+
+  /* Calendar */
+  .cal-wrap { margin: 0 16px; }
+  .cal-nav-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .cal-arrow { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; color: var(--text2); transition: background 0.15s; }
+  .cal-arrow:active { background: var(--bg3); }
+  .cal-month { font-size: 15px; font-weight: 600; color: var(--text); }
+  .cal-day-labels { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; margin-bottom: 4px; }
+  .cal-day-lbl { text-align: center; font-size: 10px; color: var(--text3); padding: 2px 0; letter-spacing: 0.05em; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-cell { aspect-ratio: 1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; color: var(--text2); transition: background 0.12s; position: relative; border: 1px solid transparent; user-select: none; }
+  .cal-cell.empty { pointer-events: none; }
+  .cal-cell.future { opacity: 0.25; pointer-events: none; }
+  .cal-cell.ok { background: var(--green-bg); color: var(--green); font-weight: 600; border-color: var(--green-dim); }
+  .cal-cell.fail { background: var(--red-bg); color: var(--red); font-weight: 600; border-color: var(--red-dim); }
+  .cal-cell.is-today { border-color: rgba(255,255,255,0.25) !important; }
+  .cal-cell:not(.empty):not(.future):active { opacity: 0.6; }
+
+  /* Monthly summary bar */
+  .month-bar { margin: 14px 16px 0; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; display: flex; align-items: center; gap: 8px; }
+  .bar-track { flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--green-dim), var(--green)); transition: width 0.3s; }
+  .bar-label { font-size: 11px; color: var(--text2); white-space: nowrap; }
+
+  /* Motivational footer */
+  .motivation { text-align: center; padding: 28px 20px 8px; font-size: 12px; color: var(--text3); line-height: 1.7; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top-bar">
+    <div class="top-title">PMO Tracker</div>
+    <div class="top-date" id="top-date"></div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-fire" id="hero-fire">🔥</div>
+    <div class="hero-num" id="hero-num">0</div>
+    <div class="hero-label">hari streak saat ini</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val a" id="stat-best">0</div>
+      <div class="stat-lbl">Terbaik</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val g" id="stat-clean">0</div>
+      <div class="stat-lbl">Bersih</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val r" id="stat-fail">0</div>
+      <div class="stat-lbl">Gagal</div>
+    </div>
+  </div>
+
+  <div class="today-card">
+    <div class="today-title" id="today-lbl">Tandai hari ini</div>
+    <div class="today-btns">
+      <button class="btn-ok" id="btn-ok" onclick="markToday('success')">✓ Berhasil</button>
+      <button class="btn-no" id="btn-no" onclick="markToday('fail')">✗ Gagal</button>
+    </div>
+  </div>
+
+  <div class="cal-wrap">
+    <div class="cal-nav-row">
+      <div class="cal-arrow" onclick="changeMonth(-1)">&#8592;</div>
+      <div class="cal-month" id="cal-title"></div>
+      <div class="cal-arrow" onclick="changeMonth(1)">&#8594;</div>
+    </div>
+    <div class="cal-day-labels">
+      <div class="cal-day-lbl">Min</div><div class="cal-day-lbl">Sen</div>
+      <div class="cal-day-lbl">Sel</div><div class="cal-day-lbl">Rab</div>
+      <div class="cal-day-lbl">Kam</div><div class="cal-day-lbl">Jum</div>
+      <div class="cal-day-lbl">Sab</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+    <div class="month-bar">
+      <div class="bar-label" id="bar-label">0 / 0 hari bersih</div>
+      <div class="bar-track"><div class="bar-fill" id="bar-fill" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <div class="motivation" id="motivation"></div>
+</div>
+
+<script>
+const MONTHS = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+const QUOTES = [
+  "Setiap hari yang bersih adalah kemenangan kecil yang membangun karakter.",
+  "Disiplin adalah jembatan antara tujuan dan pencapaian.",
+  "Satu hari setiap kali. Itulah satu-satunya cara.",
+  "Kamu lebih kuat dari dorongan sesaat.",
+  "Kontrol diri hari ini adalah kebebasan masa depan.",
+  "Progress, bukan kesempurnaan.",
+];
+
+let records = {};
+let viewYear, viewMonth;
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+function keyFor(y,m,d) { return `${y}-${pad(m+1)}-${pad(d)}`; }
+
+function load() {
+  try {
+    const raw = localStorage.getItem('pmo_records');
+    if (raw) records = JSON.parse(raw);
+  } catch(e) { records = {}; }
+  const now = new Date();
+  viewYear = now.getFullYear();
+  viewMonth = now.getMonth();
+  render();
+}
+
+function save() {
+  try { localStorage.setItem('pmo_records', JSON.stringify(records)); } catch(e) {}
+}
+
+function computeStreak() {
+  const today = todayKey();
+  let current = 0;
+  let d = new Date();
+  while (true) {
+    const k = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    if (records[k] === 'success') { current++; d.setDate(d.getDate()-1); }
+    else break;
+  }
+  const allSuccess = Object.keys(records).filter(k => records[k] === 'success').sort();
+  let best = 0, run = 1;
+  for (let i = 1; i < allSuccess.length; i++) {
+    const diff = (new Date(allSuccess[i]) - new Date(allSuccess[i-1])) / 86400000;
+    if (diff === 1) { run++; } else { best = Math.max(best, run); run = 1; }
+  }
+  if (allSuccess.length > 0) best = Math.max(best, run);
+  return { current, best };
+}
+
+function monthStats(y, m) {
+  const prefix = `${y}-${pad(m+1)}-`;
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  const todayFull = new Date(); todayFull.setHours(0,0,0,0);
+  let clean = 0, fail = 0, total = 0;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const cd = new Date(y, m, d);
+    if (cd <= todayFull) {
+      total++;
+      const k = prefix + pad(d);
+      if (records[k] === 'success') clean++;
+      else if (records[k] === 'fail') fail++;
+    }
+  }
+  return { clean, fail, total };
+}
+
+function markToday(status) {
+  const k = todayKey();
+  if (records[k] === status) delete records[k]; else records[k] = status;
+  save(); render();
+}
+
+function toggleDay(key) {
+  const today = todayKey();
+  if (new Date(key) > new Date(today)) return;
+  if (records[key] === 'success') records[key] = 'fail';
+  else if (records[key] === 'fail') delete records[key];
+  else records[key] = 'success';
+  save(); render();
+}
+
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  render();
+}
+
+function render() {
+  const now = new Date();
+  const today = todayKey();
+  const { current, best } = computeStreak();
+  const { clean, fail, total } = monthStats(viewYear, viewMonth);
+
+  // top date
+  document.getElementById('top-date').textContent = `${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+
+  // hero
+  const heroNum = document.getElementById('hero-num');
+  const heroFire = document.getElementById('hero-fire');
+  heroNum.textContent = current;
+  heroNum.className = 'hero-num' + (current === 0 ? ' zero' : '');
+  heroFire.className = 'hero-fire' + (current === 0 ? ' zero' : '');
+
+  // stats
+  document.getElementById('stat-best').textContent = best;
+  document.getElementById('stat-clean').textContent = clean;
+  document.getElementById('stat-fail').textContent = fail;
+
+  // today buttons
+  const tr = records[today];
+  document.getElementById('btn-ok').className = 'btn-ok' + (tr === 'success' ? ' active' : '');
+  document.getElementById('btn-no').className = 'btn-no' + (tr === 'fail' ? ' active' : '');
+  document.getElementById('today-lbl').textContent =
+    tr === 'success' ? '✓ Hari ini sudah ditandai bersih' :
+    tr === 'fail' ? '✗ Hari ini sudah ditandai gagal' : 'Tandai hari ini';
+
+  // calendar
+  document.getElementById('cal-title').textContent = `${MONTHS[viewMonth]} ${viewYear}`;
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+  const todayFull = new Date(); todayFull.setHours(0,0,0,0);
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += `<div class="cal-cell empty"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const k = keyFor(viewYear, viewMonth, d);
+    const cellDate = new Date(viewYear, viewMonth, d);
+    const isFuture = cellDate > todayFull;
+    const isToday = k === today;
+    let cls = 'cal-cell';
+    if (isFuture) cls += ' future';
+    else if (records[k] === 'success') cls += ' ok';
+    else if (records[k] === 'fail') cls += ' fail';
+    if (isToday) cls += ' is-today';
+    html += `<div class="${cls}" onclick="toggleDay('${k}')">${d}</div>`;
+  }
+  document.getElementById('cal-grid').innerHTML = html;
+
+  // progress bar
+  const pct = total > 0 ? Math.round((clean / total) * 100) : 0;
+  document.getElementById('bar-label').textContent = `${clean} / ${total} hari bersih bulan ini`;
+  document.getElementById('bar-fill').style.width = pct + '%';
+
+  // motivation
+  const qi = Math.abs(current) % QUOTES.length;
+  document.getElementById('motivation').textContent = `"${QUOTES[qi]}"`;
+}
+
+load();
+</script>
+</body>
+</html>
